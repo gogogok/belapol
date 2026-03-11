@@ -25,14 +25,16 @@ final class PawMenuView: UIView {
         static let backGroundImageName: String = "paw_button"
     }
 
-    // callbacks
+    //MARK: - callbacks
+    var onOpenStateChange: ((Bool) -> Void)?
+    
     var onTapQueue: (() -> Void)?
     var onTapTicket: (() -> Void)?
     var onTapNews: (() -> Void)?
     var onTapContacts: (() -> Void)?
     var onTapCollection: (() -> Void)?
 
-    private(set) var isOpen = false
+    private var isOpen = false
 
     private let pawButton: UIButton = {
         let b = UIButton(type: .custom)
@@ -77,6 +79,13 @@ final class PawMenuView: UIView {
         setupUI()
         setupActions()
         setClosedState(animated: false)
+    }
+    
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        if !isOpen { return super.point(inside: point, with: event) }
+
+        let p = convert(point, to: menuView)
+        return menuView.point(inside: p, with: event)
     }
 
     private func setupUI() {
@@ -130,6 +139,7 @@ final class PawMenuView: UIView {
 
     func open() {
         guard let superview else { return }
+        onOpenStateChange?(true)
         isOpen = true
 
         // показываем контейнер и увеличиваем его
@@ -161,6 +171,7 @@ final class PawMenuView: UIView {
 
     func close() {
         guard let superview else { return }
+        onOpenStateChange?(false)
         isOpen = false
 
         // прячем пункты
@@ -203,4 +214,5 @@ final class PawMenuView: UIView {
     @objc private func tapNews() { onTapNews?() }
     @objc private func tapContacts() { onTapContacts?() }
     @objc private func tapCollection() { onTapCollection?() }
+
 }

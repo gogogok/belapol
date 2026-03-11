@@ -4,9 +4,9 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
-		<string>InriaSans-Italic</string>
-		<string>InriaSana-Regular</string>
-		<string>InriaSans-Bold</string>
+		<string>InriaSans-Italic.ttf</string>
+		<string>InriaSans-Regular.ttf</string>
+		<string>InriaSans-Bold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

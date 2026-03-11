@@ -12,10 +12,10 @@ final class CellView: UIView {
         static let textColor: UIColor = .white
         static let iconSize: CGFloat = 45
 
-        static let headerFont = UIFont(name: "GillSans-Bold", size: 17)!
-        static let valueFont = UIFont(name: "GillSans-Bold", size: 16)!
+        static let headerFont = UIFont(name: "InriaSans-Bold", size: 17)!
+        static let valueFont = UIFont(name: "InriaSans-Bold", size: 16)!
         
-        static let stokeWidth: CGFloat = 5
+        static let stokeWidth: CGFloat = 4
         static let stokeColore: UIColor = .black
         
     }

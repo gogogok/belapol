@@ -15,8 +15,8 @@ final class BasicButtonView : UIButton {
         static let buttonColor : UIColor = UIColor(hex: "#DB8C42")!
         static let cornerRadius: CGFloat = 10
         
-        static let fontSize: CGFloat = 12
-        static let fontName: String = "Inter-SemiBold"
+        static let fontSize: CGFloat = 15
+        static let fontName: String = "InriaSans-Bold"
     }
     
     
