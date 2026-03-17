@@ -196,8 +196,8 @@ final class MainTableViewController: UIViewController {
         tablesStack.distribution = .fill
         
         tablesStack.pinTop(to: catButton.bottomAnchor, Constants.brTop)
-        tablesStack.pinLeft(to: view.safeAreaLayoutGuide.leadingAnchor, 0)
-        tablesStack.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, 0)
+        tablesStack.pinLeft(to: view.safeAreaLayoutGuide.leadingAnchor)
+        tablesStack.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor)
         
         tablesStack.addArrangedSubview(brTrSection)
         
@@ -206,7 +206,7 @@ final class MainTableViewController: UIViewController {
         (brTrLabel as UIView).pinLeft(to: brTrSection.leadingAnchor, Constants.brLabelLeft)
         
         brTrSection.addSubview(brTrButton)
-        brTrButton.pinTop(to: brTrSection.topAnchor, 0)
+        brTrButton.pinTop(to: brTrSection.topAnchor)
         brTrButton.pinLeft(to: brTrLabel.trailingAnchor, Constants.brButtonLeft)
         brTrButton.addTarget(self, action: #selector(calendarButtonTapped(_:)), for: .touchUpInside)
         
@@ -223,6 +223,7 @@ final class MainTableViewController: UIViewController {
         (secondLabel as UIView).pinTop(to: secondSection.topAnchor, 0)
         (secondLabel as UIView).pinLeft(to: secondSection.leadingAnchor, Constants.brLabelLeft)
         secondLabel.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
+        secondLabel.font = UIFont(name: Constants.fontName, size: 13)
         
         secondSection.addSubview(secondButton)
         secondButton.pinTop(to: secondSection.topAnchor, 0)
