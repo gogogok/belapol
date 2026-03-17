@@ -1,3 +1,5 @@
+import UIKit
+
 final class CarShareInteractor : CarShareBusinessLogic{
     
     typealias Model = CarShareModel
@@ -27,15 +29,18 @@ final class CarShareInteractor : CarShareBusinessLogic{
 
             viewController.isLoading = false
 
-            let sectionVMs: [AutoSectionVM]
+            let posts: [Model.CarPostDTO]
 
             switch result {
-            case .success(let posts):
-                sectionVMs = self.makeSections(from: posts)
+            case .success(let loadedPosts):
+                posts = loadedPosts
+
             case .failure(let error):
                 print("Ошибка загрузки актуальных постов: \(error)")
-                sectionVMs = []
+                posts = self.loadLocalPosts()
             }
+
+            let sectionVMs = self.makeSections(from: posts)
 
             self.presenter.presentRefreshPosts(
                 response: CarShareModel.LoadPosts.Response(
@@ -43,6 +48,21 @@ final class CarShareInteractor : CarShareBusinessLogic{
                     sections: sectionVMs
                 )
             )
+        }
+    }
+    private func loadLocalPosts() -> [Model.CarPostDTO] {
+        guard let url = Bundle.main.url(forResource: "car_posts", withExtension: "json") else {
+            print("Не найден локальный car_posts.json")
+            return []
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let decoded = try JSONDecoder().decode(Model.CarPostsResponseDTO.self, from: data)
+            return decoded.posts
+        } catch {
+            print("Ошибка чтения локального car_posts.json: \(error)")
+            return []
         }
     }
     
