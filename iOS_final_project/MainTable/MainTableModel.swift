@@ -18,6 +18,19 @@ final class  MainTableModel {
         struct ViewModel {}
     }
     
+    enum LoadArchiveData {
+        struct Request {
+            let view: UIView
+            let request : ArchiveQueueScreenshotRequest
+        }
+        struct Response {
+            let data: ArchiveQueueTableData
+        }
+        struct ViewModel {
+            let data: ArchiveQueueTableData
+        }
+    }
+    
     enum QueueDirection {
         case brestTerespol
         case berestovicaBobrovniki

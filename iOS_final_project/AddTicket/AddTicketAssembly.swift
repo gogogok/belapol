@@ -1,7 +1,7 @@
 import UIKit
 
 enum AddTicketAssembly {
-    static func build() -> UIViewController {
+    static func build() -> AddTicketViewController {
         let presenter: AddTicketPresentationLogic = AddTicketPresenter()
         let interactor: AddTicketBusinessLogic = AddTicketInteractor(presenter: presenter)
         

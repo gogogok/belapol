@@ -12,7 +12,7 @@ final class BasicButtonView : UIButton {
     //MARK: - Constants
     enum Constants{
         
-        static let buttonColor : UIColor = UIColor(hex: "#DB8C42")!
+        static let buttonColor : UIColor = UIColor(hex: "#DB8C42") ?? .orange
         static let cornerRadius: CGFloat = 10
         
         static let fontSize: CGFloat = 15

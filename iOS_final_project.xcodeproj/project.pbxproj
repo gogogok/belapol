@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F79358292F656E750056B01D /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = F79358282F656E750056B01D /* SwiftSoup */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		F79854F92F45C8E0008F5F3A /* iOS_final_project.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOS_final_project.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F79358292F656E750056B01D /* SwiftSoup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = iOS_final_project;
 			packageProductDependencies = (
+				F79358282F656E750056B01D /* SwiftSoup */,
 			);
 			productName = iOS_final_project;
 			productReference = F79854F92F45C8E0008F5F3A /* iOS_final_project.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = F79854F02F45C8E0008F5F3A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F79358272F656E750056B01D /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F79854FA2F45C8E0008F5F3A /* Products */;
 			projectDirPath = "";
@@ -343,6 +352,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F79358272F656E750056B01D /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.13.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F79358282F656E750056B01D /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F79358272F656E750056B01D /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F79854F12F45C8E0008F5F3A /* Project object */;
 }

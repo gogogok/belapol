@@ -20,6 +20,7 @@ struct SearchResultsResponse: Decodable {
 }
 
 struct IncludedItem: Decodable {
+    let id: String?
     let type: String
     let attributes: TripAttributes?
 }

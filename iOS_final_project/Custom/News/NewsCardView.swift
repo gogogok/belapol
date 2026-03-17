@@ -11,7 +11,34 @@ final class NewsCardView: UIView {
 
     //MARK: - Constants
     private enum Constants {
+        static let textColor: UIColor = .white
+        static let subtitleColor: UIColor = UIColor.white.withAlphaComponent(0.95)
+        static let dateFont: UIFont = .italicSystemFont(ofSize: 12)
+        static let subtitleFont: UIFont = .systemFont(ofSize: 11, weight: .regular)
+        static let valueFont = UIFont(name: "InriaSans-Bold", size: 20) ?? .boldSystemFont(ofSize: 20)
 
+        static let strokeWidth: CGFloat = 5
+        static let strokeColor: UIColor = .black
+
+        static let cornerRadius: CGFloat = 15
+        static let borderWidth: CGFloat = 2
+        static let borderColor: UIColor = UIColor.white.withAlphaComponent(0.8)
+
+        static let glassTop: CGFloat = 100
+        static let glassHorizontal: CGFloat = 9
+        static let glassBottom: CGFloat = 8
+
+        static let titleTop: CGFloat = 10
+        static let titleHorizontal: CGFloat = 11
+
+        static let dateTop: CGFloat = 14
+        static let dateLeft: CGFloat = 11
+
+        static let subtitleInset: CGFloat = 10
+
+        static let cardHeight: CGFloat = 180
+
+        static let imageAlpha: CGFloat = 1
     }
 
     // MARK: - UI
@@ -19,7 +46,7 @@ final class NewsCardView: UIView {
         let imView = UIImageView()
         imView.contentMode = .scaleAspectFill
         imView.clipsToBounds = true
-        imView.alpha = 0.4
+        imView.alpha = Constants.imageAlpha
         return imView
     }()
 
@@ -27,14 +54,12 @@ final class NewsCardView: UIView {
         let blur = UIBlurEffect(style: .systemChromeMaterialDark)
         let view = UIVisualEffectView(effect: blur)
         view.clipsToBounds = true
-        view.layer.cornerRadius = 15
+        view.layer.cornerRadius = Constants.cornerRadius
         return view
     }()
 
     private let titleLabel: UILabel = {
         let title = UILabel()
-        title.font = .systemFont(ofSize: 20, weight: .heavy)
-        title.textColor = .white
         title.numberOfLines = 2
         title.setContentCompressionResistancePriority(.required, for: .vertical)
         return title
@@ -42,15 +67,15 @@ final class NewsCardView: UIView {
 
     private let dateLabel: UILabel = {
         let date = UILabel()
-        date.font = .italicSystemFont(ofSize: 12)
-        date.textColor = .white
+        date.font = Constants.dateFont
+        date.textColor = Constants.textColor
         return date
     }()
 
     private let subtitleLabel: UILabel = {
         let subTitle = UILabel()
-        subTitle.font = .systemFont(ofSize: 11, weight: .regular)
-        subTitle.textColor = UIColor.white.withAlphaComponent(0.95)
+        subTitle.font = Constants.subtitleFont
+        subTitle.textColor = Constants.subtitleColor
         subTitle.numberOfLines = 3
         return subTitle
     }()
@@ -58,9 +83,9 @@ final class NewsCardView: UIView {
     private let borderView: UIView = {
         let view = UIView()
         view.backgroundColor = .clear
-        view.layer.cornerRadius = 15
-        view.layer.borderWidth = 2
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
+        view.layer.cornerRadius = Constants.cornerRadius
+        view.layer.borderWidth = Constants.borderWidth
+        view.layer.borderColor = Constants.borderColor.cgColor
         view.isUserInteractionEnabled = false
         return view
     }()
@@ -71,18 +96,15 @@ final class NewsCardView: UIView {
         super.init(frame: frame)
         configureUI()
     }
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         configureUI()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-    }
-
     // MARK: - Configure
     private func configureUI() {
-        layer.cornerRadius = 15
+        layer.cornerRadius = Constants.cornerRadius
         clipsToBounds = true
 
         addSubview(bgImageView)
@@ -97,29 +119,35 @@ final class NewsCardView: UIView {
         bgImageView.pin(to: self)
         borderView.pin(to: self)
 
-        glassView.pinTop(to: topAnchor, 100)
-        glassView.pinHorizontal(to: self, 9)
-        glassView.pinBottom(to: bottomAnchor, 8)
+        glassView.pinTop(to: topAnchor, Constants.glassTop)
+        glassView.pinHorizontal(to: self, Constants.glassHorizontal)
+        glassView.pinBottom(to: bottomAnchor, Constants.glassBottom)
 
-        titleLabel.pinTop(to: topAnchor, 10)
-        titleLabel.pinHorizontal(to: self, 11)
-        
+        titleLabel.pinTop(to: topAnchor, Constants.titleTop)
+        titleLabel.pinHorizontal(to: self, Constants.titleHorizontal)
 
-        dateLabel.pinTop(to: titleLabel.bottomAnchor, 14)
-        dateLabel.pinLeft(to: leadingAnchor, 11)
+        dateLabel.pinTop(to: titleLabel.bottomAnchor, Constants.dateTop)
+        dateLabel.pinLeft(to: leadingAnchor, Constants.dateLeft)
 
-        subtitleLabel.pin(to: glassView, 10)
+        subtitleLabel.pin(to: glassView, Constants.subtitleInset)
 
-        setHeight(180)
+        setHeight(Constants.cardHeight)
     }
 
     func configure(
         title: String,
         dateText: String,
         subtitle: String,
-        image: UIImage,
+        image: UIImage?
     ) {
-        titleLabel.text = title
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: Constants.valueFont,
+            .foregroundColor: Constants.textColor,
+            .strokeColor: Constants.strokeColor,
+            .strokeWidth: -Constants.strokeWidth
+        ]
+
+        titleLabel.attributedText = NSAttributedString(string: title, attributes: attributes)
         dateLabel.text = dateText
         subtitleLabel.text = subtitle
         bgImageView.image = image

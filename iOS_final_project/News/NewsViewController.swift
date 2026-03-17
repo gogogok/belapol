@@ -1,23 +1,22 @@
 import UIKit
-
-struct NewsVM {
-    let title: String
-    let dateText: String
-    let subtitle: String
-    let image: UIImage
-}
+import SafariServices
 
 final class NewsViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
     
-    
     typealias Model = NewsModel
+    
+    private enum NewsFilter {
+        case all
+        case web
+        case telegram
+    }
     
     //MARK: - Constants
     private enum Constants {
         static let fatalError: String = "Ошибка создания"
         
-        static let backgroundColor: UIColor = UIColor(hex: "#141414")!
+        static let backgroundColor: UIColor = UIColor(hex: "#141414") ?? .black
         
         static let buttonHeight : CGFloat = 150
         static let buttonHWidth : CGFloat = 170
@@ -52,8 +51,11 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
     //MARK: - Fields
     
     var interactor : NewsBusinessLogic
+    private var loadingView: LoadingView?
     
-    private var items: [NewsVM] = []
+    private var allItems: [Model.NewsVM] = []
+    private var items: [Model.NewsVM] = []
+    private var currentFilter: NewsFilter = .all
 
     private lazy var collectionView: UICollectionView = {
         let cv = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
@@ -75,7 +77,7 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
     
     private let catButton = CatBackButton()
     private let pawMenu = PawMenuView()
-    private let filter = ChooseFilterButton(title: Constants.filterName, chooses: Constants.filterChooses)
+    private let filter = ChooseFilterButton(title: Constants.filterName, fontSize: Constants.fontSize, chooses: Constants.filterChooses)
     private let card = NewsCardView()
     
     
@@ -127,7 +129,21 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
         view.addSubview(filter)
         filter.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, Constants.filterRight)
         filter.pinTop(to: view.safeAreaLayoutGuide.topAnchor, Constants.filterTop)
-        filter.titleLabel.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
+        
+        filter.onTapAll = { [weak self] in
+                self?.currentFilter = .all
+                self?.applyFilter()
+            }
+            
+            filter.onTapFirst = { [weak self] in
+                self?.currentFilter = .web
+                self?.applyFilter()
+            }
+            
+            filter.onTapSecond = { [weak self] in
+                self?.currentFilter = .telegram
+                self?.applyFilter()
+            }
     }
     
     private func configureCatButton() {
@@ -173,15 +189,10 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
         collectionView.pinTop(to: pawMenu.bottomAnchor)
         collectionView.pinBottom(to: view.bottomAnchor)
         
-        
-        items = [NewsVM(title: "News 1", dateText: "25.02.2026", subtitle: "Subtitle text for news", image: UIImage(named: "cat_belapol")!), NewsVM(
-            title: "Попка",
-            dateText: "25.02.2026",
-            subtitle: "Сисюлики замеченв на месте происшествия, но доказательста для обвинений оказалось нелостаточно. Сисюлики успешно пересекли границу",
-            image: UIImage(named: "cat_belapol")!)
-        ]
-        collectionView.reloadData()
+        showLoading()
+        interactor.loadNews(request: Model.LoadPosts.Request(vc: self))
     }
+
     
     //MARK: - Present func
     func displayView(vc: UIViewController) {
@@ -189,6 +200,19 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
         var stack = nav.viewControllers
         stack[stack.count - 1] = vc
         nav.setViewControllers(stack, animated: true)
+    }
+    
+    public func presentLoadedNews(vm: Model.LoadPosts.ViewModel) {
+        Task {
+            let loadedItems = vm.news
+            
+            await MainActor.run {
+                self.allItems = loadedItems
+                self.items = loadedItems
+                self.loadingView?.hide()
+                self.collectionView.reloadData()
+            }
+        }
     }
     
     
@@ -213,6 +237,7 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
         }
     }
 
+
      // MARK: - DataSource
      func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
          items.count
@@ -224,6 +249,49 @@ final class NewsViewController: UIViewController, UICollectionViewDataSource, UI
          cell.configure(title: vm.title, date: vm.dateText, subtitle: vm.subtitle, image: vm.image)
          return cell
      }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let news = items[indexPath.item]
+        
+        if news.isTelegramPost {
+            let popup = NewsPostPopupView()
+            popup.configure(title: news.title, image: news.image, text: news.subtitle)
+            popup.show(in: self.view)
+            return
+        }
+        
+        guard let url = news.url else { return }
+        let safari = SFSafariViewController(url: url)
+        present(safari, animated: true)
+    }
+    
+    private func showLoading() {
+        if loadingView != nil { return }
+        
+        let loadView = LoadingView()
+        loadingView = loadView
+        loadView.show(in: view)
+    }
+    
+    // MARK: - Filter method
+    private func applyFilter() {
+        switch currentFilter {
+        case .all:
+            items = allItems
+            filter.titleLabel.text = "Все"
+            
+        case .web:
+            items = allItems.filter { !$0.isTelegramPost }
+            filter.titleLabel.text = "Новостной сайт"
+            
+        case .telegram:
+            items = allItems.filter { $0.isTelegramPost }
+            filter.titleLabel.text = "Телеграмм"
+        }
+        
+        collectionView.reloadData()
+    }
+
     
 }
 

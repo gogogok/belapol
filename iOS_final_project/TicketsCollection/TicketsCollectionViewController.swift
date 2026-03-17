@@ -4,10 +4,16 @@ final class TicketsCollectionViewController: UIViewController {
     
     typealias Model =  TicketsCollectionModel
     
+    private enum FilterType {
+        case all
+        case future
+        case past
+    }
+    
     // MARK: - Constants
     private enum Constants {
         static let fatalError = "Ошибка создания"
-        static let backgroundColor = UIColor(hex: "#141414")!
+        static let backgroundColor = UIColor(hex: "#141414") ?? .black
         
         static let buttonHeight: CGFloat = 150
         static let buttonWidth: CGFloat = 170
@@ -39,16 +45,20 @@ final class TicketsCollectionViewController: UIViewController {
         static let titleTopInset: CGFloat = 8
         static let titleFontSize: CGFloat = 20
     
-        
-        static let buttonColor : UIColor = UIColor(hex: "#DB8C42")!
-        static let backgroundChosenButtonColor = UIColor(hex: "#E1740E")!
+
         static let buttonFontSize: CGFloat = 16
+        
+        static let titles: [String] = ["Все", "Предстоящие поездки", "Прошедшие поездки"]
         
     }
     
     // MARK: - Fields
     
     private var interactor:  TicketsCollectionBusinessLogic
+    private var pastTickets: [TicketsVM] = []
+    private var futureTickets: [TicketsVM] = []
+    
+    private var currentFilter: FilterType = .all
     
     private var sections: [TicketsSectionVM] = []
     
@@ -80,8 +90,10 @@ final class TicketsCollectionViewController: UIViewController {
     
     private let catButton = CatBackButton()
     private let pawMenu = PawMenuView()
-    private let filter = ChooseFilterButton(title: Constants.filterName, chooses: Constants.filterChooses)
+    private let filter = ChooseFilterButton(title: Constants.filterName, fontSize: Constants.fontSize, chooses: Constants.filterChooses)
     private let addButton : BasicButtonView = BasicButtonView(label: "+ Добавить билет", width: 150, height: 40)
+    
+    private var emplyLabel : UILabel?
     
     // MARK: - Lifecycle
     init(interactor:  TicketsCollectionBusinessLogic) {
@@ -97,7 +109,7 @@ final class TicketsCollectionViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
-        setupData()
+        interactor.loadTickets(request: Model.LoadTicketsCollection.Request())
     }
     
     // MARK: - UI
@@ -106,6 +118,10 @@ final class TicketsCollectionViewController: UIViewController {
         configureCatButton()
         configureFilterButton()
         configurAddButton()
+        emplyLabel = makeSectionTitle("Добавь свой первый билет!")
+        if let emplyLabel = emplyLabel {
+            view.addSubview(emplyLabel)
+        }
         configureScroll()
         view.bringSubviewToFront(pawMenu)
         view.bringSubviewToFront(filter)
@@ -127,7 +143,18 @@ final class TicketsCollectionViewController: UIViewController {
         view.addSubview(filter)
         filter.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, Constants.filterRight)
         filter.pinTop(to: view.safeAreaLayoutGuide.topAnchor, Constants.filterTop)
-        filter.titleLabel.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
+        
+        filter.onTapAll = { [weak self] in
+            self?.showAllTickets()
+        }
+        
+        filter.onTapFirst = { [weak self] in
+            self?.showOnlyFutureTickets()
+        }
+        
+        filter.onTapSecond = { [weak self] in
+            self?.showOnlyPastTickets()
+        }
     }
     
     private func configureCatButton() {
@@ -199,46 +226,30 @@ final class TicketsCollectionViewController: UIViewController {
     
     
     // MARK: - Data
-    
-    private func setupData() {
-        let image = UIImage(named: "cat_belapol") ?? UIImage()
-        
-        sections = [
-            TicketsSectionVM(
-                title: "Предстоящие поездки",
-                items: [
-                    TicketsVM(
-                        title: "Ecolines",
-                        stationFrom: "Минск",
-                        stationTo: "Варшава",
-                        point: "Проверено по каналу",
-                        date: "Сегодня",
-                        time: "18:00 -\n18:20",
-                        image: image,
-                        grade: "7.0"
-                    ),
-                    TicketsVM(
-                        title: "Ecolines",
-                        stationFrom: "Минск",
-                        stationTo: "Варшава",
-                        point: "Актуально по сайту",
-                        date: "Завтра",
-                        time: "09:40 -\n10:00",
-                        image: image,
-                        grade: "9.1"
-                    )
-                ]
-            )
-        ]
-        
-        self.renderSections()
+    public func setupData(vm: Model.LoadTicketsCollection.ViewModel) {
+        pastTickets = vm.pastTickets
+        futureTickets = vm.futureTickets
+        applyCurrentFilter()
     }
     
     // MARK: - Render
     private func renderSections() {
+        
         stackView.arrangedSubviews.forEach { view in
             stackView.removeArrangedSubview(view)
             view.removeFromSuperview()
+        }
+        
+        if let emplyLabel = emplyLabel {
+            if sections.isEmpty {
+                emplyLabel.isHidden = false
+                emplyLabel.pinCenterX(to: scrollView)
+                emplyLabel.pinTop(to: scrollView.topAnchor)
+                return
+            }
+            
+            emplyLabel.isHidden = true
+            
         }
         
         for section in sections {
@@ -254,9 +265,15 @@ final class TicketsCollectionViewController: UIViewController {
                     point: item.point,
                     date: item.date,
                     time: item.time,
-                    image: item.image,
-                    grade: item.grade
+                    image: item.image
                 )
+                
+                card.onDeleteSwipe = { [weak self] in
+                    guard let self else { return }
+                    interactor.deleteTickets(request: Model.LoadAddTicket.Request(ticket: item))
+                    interactor.loadTickets(request: Model.LoadTicketsCollection.Request())
+                }
+                
                 stackView.addArrangedSubview(card)
             }
         }
@@ -288,9 +305,78 @@ final class TicketsCollectionViewController: UIViewController {
         nav.setViewControllers(stack, animated: false)
     }
     
+    // MARK: - objc
     @objc
     private func addButtonTapped() {
-        present(AddTicketAssembly.build(), animated: true)
+        let vc = AddTicketAssembly.build()
+
+        vc.onTicketAdded = {[weak self] ticket in
+            self?.interactor.loadSaveTicket(request: Model.LoadAddTicket.Request(ticket: ticket))
+            self?.interactor.loadTickets(request: Model.LoadTicketsCollection.Request())
+        }
+        present(vc, animated: true)
+    }
+    
+    // MARK: - Filter methods
+    private func showAllTickets() {
+        currentFilter = .all
+        filter.titleLabel.text = Constants.titles[0]
+        applyCurrentFilter()
+    }
+
+    private func showOnlyFutureTickets() {
+        currentFilter = .future
+        filter.titleLabel.text = Constants.titles[1]
+        applyCurrentFilter()
+    }
+
+    private func showOnlyPastTickets() {
+        currentFilter = .past
+        filter.titleLabel.text = Constants.titles[2]
+        applyCurrentFilter()
+    }
+    
+    private func applyCurrentFilter() {
+        switch currentFilter {
+        case .all:
+            sections = []
+
+            if !futureTickets.isEmpty {
+                sections.append(
+                    TicketsSectionVM(
+                        title: Constants.titles[1],
+                        items: futureTickets
+                    )
+                )
+            }
+
+            if !pastTickets.isEmpty {
+                sections.append(
+                    TicketsSectionVM(
+                        title: Constants.titles[2],
+                        items: pastTickets
+                    )
+                )
+            }
+
+        case .future:
+            sections = futureTickets.isEmpty ? [] : [
+                TicketsSectionVM(
+                    title: Constants.titles[1],
+                    items: futureTickets
+                )
+            ]
+
+        case .past:
+            sections = pastTickets.isEmpty ? [] : [
+                TicketsSectionVM(
+                    title: Constants.titles[2],
+                    items: pastTickets
+                )
+            ]
+        }
+
+        renderSections()
     }
     
 }

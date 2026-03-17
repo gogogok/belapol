@@ -1,7 +1,7 @@
 import UIKit
 
 final class  MainTablePresenter :  MainTablePresentationLogic  {
-    
+
     typealias Model = MainTableModel
     
     weak var view: MainTableViewController?
@@ -13,6 +13,10 @@ final class  MainTablePresenter :  MainTablePresentationLogic  {
     
     
     func presentCalendarView(response: Model.LoadMainTable.Response) {
-        view!.presentCalendarSheet()
+        self.view?.presentCalendarSheet()
+    }
+    
+    func presentArchiveData(response: Model.LoadArchiveData.Response) {
+        self.view?.presentCalendarTable(data: response.data)
     }
 }

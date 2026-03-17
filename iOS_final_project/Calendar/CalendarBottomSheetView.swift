@@ -19,7 +19,7 @@ final class CalendarBottomSheetView: UIView {
         static let closeWidth: Double = 55
         static let closeHeight: Double = 40
         static let closeCornerRadius: Double = 12
-        static let closeButtonColor: UIColor = UIColor(hex: "#191919")!
+        static let closeButtonColor: UIColor = UIColor(hex: "#191919") ?? .black
         
         static let sheetHeight: Double = 500
         

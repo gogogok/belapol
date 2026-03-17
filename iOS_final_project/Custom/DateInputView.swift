@@ -10,7 +10,7 @@ import UIKit
 final class DateInputView: UIView {
     
     enum Constants {
-        static let backgroundColor = UIColor(hex: "#DB8C42")!
+        static let backgroundColor = UIColor(hex: "#DB8C42") ?? .orange
         static let textColor: UIColor = .black
         static let cornerRadius: CGFloat = 5
         
@@ -21,7 +21,7 @@ final class DateInputView: UIView {
         static let horizontalInset: CGFloat = 14
     }
     
-    private let textField = UITextField()
+    public let textField = UITextField()
     private let datePicker = UIDatePicker()
     
     var onDateChanged: ((Date) -> Void)?

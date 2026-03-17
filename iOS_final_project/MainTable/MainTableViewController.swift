@@ -6,7 +6,8 @@ final class MainTableViewController: UIViewController {
     
     //MARK: - Constants
     private enum Constants {
-        static let backgroundColor: UIColor = UIColor(hex: "#141414")!
+        static let backgroundColor: UIColor = UIColor(hex: "#141414") ?? .black
+        static let fontSize: CGFloat = 17
         static let fatalError: String = "Ошибка создания"
         
         static let buttonHeight : CGFloat = 150
@@ -36,16 +37,23 @@ final class MainTableViewController: UIViewController {
         static let catHeight: CGFloat = 400
         static let catWidth: CGFloat = 200
         static let catWRotate: CGFloat = 20
+        
+        static let filterFontSize: CGFloat = 12
+        static let fontName: String = "InriaSans-Bold"
     }
     
     //MARK: - Fields
     
     var interactor : MainTableBusinessLogic
     private let queueService: BorderQueueService = BorderQueueService()
-    private let dataService = ArchiveQueueDataService()
+    private var archiveLoadingView: LoadingView?
     
     let catButton = CatBackButton()
     let pawMenu = PawMenuView()
+    
+    private let tablesStack = UIStackView()
+    private let brTrSection = UIView()
+    private let secondSection = UIView()
     
     let brTrLabel = BasicLabelView(label: Constants.brTrLabelName, width: Constants.brTrLabelWidth, height: Constants.brTrLabelHeight)
     let brTrButton = BasicButtonView(label: Constants.brTrButtonName, width: Constants.brTrButtonWidth, height: Constants.brTrLabelHeight)
@@ -55,7 +63,7 @@ final class MainTableViewController: UIViewController {
     let secondButton = BasicButtonView(label: Constants.brTrButtonName, width: Constants.brTrButtonWidth, height: Constants.brTrLabelHeight)
     let secondGrid = BorderTableView()
     
-    let filter = ChooseFilterButton(title: Constants.filterName, chooses: Constants.filterChooses)
+    let filter = ChooseFilterButton(title: Constants.filterName, fontSize: Constants.filterFontSize, chooses: Constants.filterChooses)
     
     private var selectedCheckpointName: String?
     
@@ -166,38 +174,66 @@ final class MainTableViewController: UIViewController {
         view.addSubview(filter)
         filter.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, 20)
         filter.pinTop(to: view.safeAreaLayoutGuide.topAnchor, 30)
+        
+        filter.onTapAll = { [weak self] in
+            self?.showAllTables()
+        }
+        
+        filter.onTapFirst = { [weak self] in
+            self?.showOnlyBrest()
+        }
+        
+        filter.onTapSecond = { [weak self] in
+            self?.showOnlyBerestovitsa()
+        }
     }
     
     private func configureTableView() {
-        view.addSubview(brTrLabel)
-        (brTrLabel as UIView).pinTop(to: catButton.bottomAnchor, Constants.brTop)
-        (brTrLabel as UIView).pinLeft(to: view.safeAreaLayoutGuide.leadingAnchor, Constants.brLabelLeft)
+        view.addSubview(tablesStack)
+        tablesStack.axis = .vertical
+        tablesStack.spacing = 20
+        tablesStack.alignment = .fill
+        tablesStack.distribution = .fill
         
-        view.addSubview(brTrButton)
-        brTrButton.pinTop(to: catButton.bottomAnchor, Constants.brTop)
+        tablesStack.pinTop(to: catButton.bottomAnchor, Constants.brTop)
+        tablesStack.pinLeft(to: view.safeAreaLayoutGuide.leadingAnchor, 0)
+        tablesStack.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, 0)
+        
+        tablesStack.addArrangedSubview(brTrSection)
+        
+        brTrSection.addSubview(brTrLabel)
+        (brTrLabel as UIView).pinTop(to: brTrSection.topAnchor, 0)
+        (brTrLabel as UIView).pinLeft(to: brTrSection.leadingAnchor, Constants.brLabelLeft)
+        
+        brTrSection.addSubview(brTrButton)
+        brTrButton.pinTop(to: brTrSection.topAnchor, 0)
         brTrButton.pinLeft(to: brTrLabel.trailingAnchor, Constants.brButtonLeft)
         brTrButton.addTarget(self, action: #selector(calendarButtonTapped(_:)), for: .touchUpInside)
         
-        view.addSubview(gridBrTr)
+        brTrSection.addSubview(gridBrTr)
         gridBrTr.pinTop(to: brTrLabel.bottomAnchor, 20)
-        gridBrTr.pinHorizontal(to: view, 20)
-
+        gridBrTr.pinHorizontal(to: brTrSection, 20)
+        gridBrTr.pinBottom(to: brTrSection.bottomAnchor, 0)
+        
         applyInitialState(to: gridBrTr)
         
-        //2 таблица
-        view.addSubview(secondLabel)
-        (secondLabel as UIView).pinTop(to: gridBrTr.bottomAnchor, Constants.secondTop)
-        (secondLabel as UIView).pinLeft(to: view.safeAreaLayoutGuide.leadingAnchor, Constants.brLabelLeft)
+        tablesStack.addArrangedSubview(secondSection)
         
-        view.addSubview(secondButton)
-        secondButton.pinTop(to: gridBrTr.bottomAnchor, Constants.secondTop)
+        secondSection.addSubview(secondLabel)
+        (secondLabel as UIView).pinTop(to: secondSection.topAnchor, 0)
+        (secondLabel as UIView).pinLeft(to: secondSection.leadingAnchor, Constants.brLabelLeft)
+        secondLabel.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
+        
+        secondSection.addSubview(secondButton)
+        secondButton.pinTop(to: secondSection.topAnchor, 0)
         secondButton.pinLeft(to: secondLabel.trailingAnchor, Constants.brButtonLeft)
         secondButton.addTarget(self, action: #selector(calendarButtonTapped(_:)), for: .touchUpInside)
         
-        view.addSubview(secondGrid)
+        secondSection.addSubview(secondGrid)
         secondGrid.pinTop(to: secondLabel.bottomAnchor, 20)
-        secondGrid.pinHorizontal(to: view, 20)
-
+        secondGrid.pinHorizontal(to: secondSection, 20)
+        secondGrid.pinBottom(to: secondSection.bottomAnchor, 0)
+        
         applyInitialState(to: secondGrid)
     }
     
@@ -234,7 +270,7 @@ final class MainTableViewController: UIViewController {
     private func applyInitialState(to tableView: BorderTableView) {
         tableView.configure(
             headerLeft: "--.--.---- --:--",
-            headerRight: "Выезд из РБ",
+            headerRight: "выезд из РБ",
             rows: [
                 .init(iconSystemName: "car.fill", valueText: "..."),
                 .init(iconSystemName: "bus.fill", valueText: "..."),
@@ -293,7 +329,20 @@ final class MainTableViewController: UIViewController {
     }
     
     public func presentCalendarTable(data: Model.ArchiveQueueTableData) {
-        print("Вторая кнопка нажата")
+        
+        if archiveLoadingView == nil {
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: "Не удалось загрузить архив, попробуйте позже :(",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "ОК", style: .default))
+            
+            present(alert, animated: true)
+        }
+        
+        archiveLoadingView?.hide()
         
         let table = CalendarTable(data: data)
         
@@ -309,24 +358,43 @@ final class MainTableViewController: UIViewController {
         table.show(in: view)
     }
     
+    
     private func loadArchiveData(checkpointName: String, dateString: String) {
-        let request = Model.ArchiveQueueScreenshotRequest(
-            checkpointName: checkpointName,
-            date: dateString
-        )
+        showArchiveLoading()
+        interactor.loadArchiveData(request: Model.LoadArchiveData.Request(view: self.view, request: Model.ArchiveQueueScreenshotRequest(checkpointName: checkpointName, date: dateString)))
+    }
+    
+    private func showArchiveLoading() {
+        if archiveLoadingView != nil { return }
         
-        dataService.loadData(in: self.view, request: request) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let data):
-                    print("Таблица получена")
-                    self?.presentCalendarTable(data: data)
-                    
-                case .failure(let error):
-                    print("Ошибка загрузки архива: \(error)")
-                }
-            }
-        }
+        let loadingView = LoadingView()
+        archiveLoadingView = loadingView
+        loadingView.show(in: view)
+    }
+
+    private func hideArchiveLoading() {
+        archiveLoadingView?.hide()
+        archiveLoadingView = nil
+    }
+    
+    // MARK: - Filter methods
+    private func showAllTables() {
+        brTrSection.isHidden = false
+        secondSection.isHidden = false
+        filter.titleLabel.text = "Все"
+    }
+    
+    private func showOnlyBrest() {
+        brTrSection.isHidden = false
+        secondSection.isHidden = true
+        filter.titleLabel.text = "Брест - Тересполь"
+    }
+    
+    private func showOnlyBerestovitsa() {
+        brTrSection.isHidden = true
+        secondSection.isHidden = false
+
+        filter.titleLabel.text = "Берестовица - Бобровники"
     }
 }
 

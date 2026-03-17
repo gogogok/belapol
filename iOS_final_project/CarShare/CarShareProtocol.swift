@@ -6,6 +6,8 @@ protocol CarShareBusinessLogic {
     func loadView(request: Model.LoadView.Request)
     
     func loadNotAnimatedView(request: Model.LoadView.Request)
+    
+    func loadRefreshPosts(request: Model.LoadPosts.Request)
 }
 
 protocol CarSharePresentationLogic: AnyObject {
@@ -16,6 +18,8 @@ protocol CarSharePresentationLogic: AnyObject {
     func presentView(response: Model.LoadView.Response)
     
     func presentNotAnimatedView(response: Model.LoadView.Response)
+    
+    func presentRefreshPosts(response: Model.LoadPosts.Response)
 }
 
 

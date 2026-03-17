@@ -7,6 +7,8 @@ protocol MainTableBusinessLogic {
     func loadView(request: Model.LoadView.Request)
     
     func loadCalendarView(request: Model.LoadMainTable.Request)
+    
+    func loadArchiveData(request: Model.LoadArchiveData.Request)
 }
 
 protocol MainTablePresentationLogic: AnyObject {
@@ -17,6 +19,8 @@ protocol MainTablePresentationLogic: AnyObject {
     func presentView(response: Model.LoadView.Response)
     
     func presentCalendarView(response: Model.LoadMainTable.Response)
+    
+    func presentArchiveData(response: Model.LoadArchiveData.Response)
 }
 
 protocol BorderQueueServiceProtocol {

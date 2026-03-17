@@ -7,7 +7,7 @@ final class CarShareViewController: UIViewController {
     // MARK: - Constants
     private enum Constants {
         static let fatalError = "Ошибка создания"
-        static let backgroundColor = UIColor(hex: "#141414")!
+        static let backgroundColor = UIColor(hex: "#141414") ?? .black
 
         static let buttonHeight: CGFloat = 150
         static let buttonWidth: CGFloat = 170
@@ -20,7 +20,6 @@ final class CarShareViewController: UIViewController {
         static let catWRotate: CGFloat = 180
 
         static let filterName = "Установить фильтр"
-        static let filterChooses = ["Все", "Новостной сайт", "Телеграмм"]
         static let fontSize: CGFloat = 14
         static let fontName = "InriaSans-Bold"
 
@@ -48,8 +47,8 @@ final class CarShareViewController: UIViewController {
         static let busButtonWidth: CGFloat = 210
         static let busButtonHeight: CGFloat = 30
         
-        static let buttonColor : UIColor = UIColor(hex: "#DB8C42")!
-        static let backgroundChosenButtonColor = UIColor(hex: "#E1740E")!
+        static let buttonColor : UIColor = UIColor(hex: "#DB8C42") ?? .orange.withAlphaComponent(0.8)
+        static let backgroundChosenButtonColor = UIColor(hex: "#E1740E") ?? .orange
         static let buttonFontSize: CGFloat = 16
 
     }
@@ -59,6 +58,7 @@ final class CarShareViewController: UIViewController {
     var interactor: CarShareBusinessLogic
 
     private var sections: [AutoSectionVM] = []
+    public var isLoading = false
 
     private let scrollView: UIScrollView = {
         let scroll = UIScrollView()
@@ -88,7 +88,6 @@ final class CarShareViewController: UIViewController {
 
     private let catButton = CatBackButton()
     private let pawMenu = PawMenuView()
-    private let filter = ChooseFilterButton(title: Constants.filterName, chooses: Constants.filterChooses)
     private let autoButton = BasicButtonView(label: Constants.autoButtonName, width: Constants.autoButtonWidth, height: Constants.autoButtonHeight)
     private let bussButton = BasicButtonView(label: Constants.busButtonName, width: Constants.buttonWidth, height: Constants.busButtonHeight)
     private let buttonStack: UIStackView = {
@@ -114,20 +113,26 @@ final class CarShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
-        setupData()
-        updateButtonsState(isBusSelected: true)
-        renderSections()
+        observeAppDidBecomeActive()
+        refreshPosts()
+    }
+            
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshPosts()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - UI
     private func configureUI() {
         configureBackground()
         configureCatButton()
-        configureFilterButton()
         configureBottomButtons()
         configureScroll()
         view.bringSubviewToFront(pawMenu)
-        view.bringSubviewToFront(filter)
     }
 
     private func configureBackground() {
@@ -141,14 +146,7 @@ final class CarShareViewController: UIViewController {
         cat.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, Constants.catRight)
         cat.transform = CGAffineTransform(rotationAngle: Constants.catWRotate * .pi / 180)
     }
-
-    private func configureFilterButton() {
-        view.addSubview(filter)
-        filter.pinRight(to: view.safeAreaLayoutGuide.trailingAnchor, Constants.filterRight)
-        filter.pinTop(to: view.safeAreaLayoutGuide.topAnchor, Constants.filterTop)
-        filter.titleLabel.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
-    }
-
+    
     private func configureCatButton() {
         view.addSubview(catButton)
         catButton.setHeight(Constants.buttonHeight)
@@ -217,54 +215,32 @@ final class CarShareViewController: UIViewController {
         stackView.pinBottom(to: contentView.bottomAnchor, Constants.contentTop)
     }
     
-
-    // MARK: - Data
-
-    private func setupData() {
-        sections = [
-            AutoSectionVM(
-                title: "Минск → Варшава",
-                items: [
-                    CarVM(
-                        date: "Сегодня 18.10",
-                        time: "12:20",
-                        description: "Сегодня 18.11 Возьму попутчиков Выезд примерно 4-5 утра Минск- Варшава Комфортный авто Есть место для багажа Без предоплат Писать в л.с",
-                        userName: "jfjfjf",
-                        nickname: "@noncrit"
-                    ),
-                    CarVM(
-                        date: "Сегодня 18.10",
-                        time: "12:20",
-                        description: "Сегодня 18.11 Возьму попутчиков Выезд примерно 4-5 утра Минск- Варшава Комфортный авто Есть место для багажа Без предоплат Писать в л.с",
-                        userName: "jfjfjf",
-                        nickname: "@noncrit"
-                    ),
-                ]
-            ),
-            AutoSectionVM(
-                title: "Минск → Варшава",
-                items: [
-                    CarVM(
-                        date: "Сегодня 18.10",
-                        time: "12:20",
-                        description: "Сегодня 18.11 Возьму попутчиков Выезд примерно 4-5 утра Минск- Варшава Комфортный авто Есть место для багажа Без предоплат Писать в л.с",
-                        userName: "jfjfjf",
-                        nickname: "@noncrit"
-                    ),
-                    CarVM(
-                        date: "Сегодня 18.10",
-                        time: "12:20",
-                        description: "Сегодня 18.11 Возьму попутчиков Выезд примерно 4-5 утра Минск- Варшава Комфортный авто Есть место для багажа Без предоплат Писать в л.с",
-                        userName: "jfjfjf",
-                        nickname: "@noncrit"
-                    ),
-                ]
-            )
-        ]
+    // MARK: - App lifecycle observing
+    private func observeAppDidBecomeActive() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+    
+    @objc
+    private func handleAppDidBecomeActive() {
+        refreshPosts()
     }
 
+    // MARK: - Data
+       
+       private func refreshPosts() {
+           guard !isLoading else { return }
+           isLoading = true
+           
+           interactor.loadRefreshPosts(request: Model.LoadPosts.Request(vc: self))
+       }
     // MARK: - Render
-    private func renderSections() {
+    public func renderSections(vm: Model.LoadPosts.ViewModel) {
+        sections = vm.sections
         stackView.arrangedSubviews.forEach { view in
             stackView.removeArrangedSubview(view)
             view.removeFromSuperview()
@@ -283,6 +259,17 @@ final class CarShareViewController: UIViewController {
                     userName: item.userName,
                     nickname: item.nickname
                 )
+                
+                card.onTapShowMore = { [weak self] in
+                    guard let self = self else { return }
+                    
+                    let popup = RidePostPopupView()
+                    popup.configure(
+                        name: item.nickname,
+                        username: item.userName,
+                        text: item.description)
+                    popup.show(in: self.view)
+                }
                 stackView.addArrangedSubview(card)
             }
         }

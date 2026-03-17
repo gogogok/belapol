@@ -20,9 +20,13 @@ final class CalendarTableRowCell: UITableViewCell {
         return stack
     }()
     
+    private var labels: [UILabel] = []
+    private let columnsCount = 4
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
+        setupColumns()
     }
     
     required init?(coder: NSCoder) {
@@ -41,31 +45,17 @@ final class CalendarTableRowCell: UITableViewCell {
         hStack.pinRight(to: contentView.trailingAnchor, 8)
     }
     
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        hStack.arrangedSubviews.forEach {
-            hStack.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
-    }
-    
-    func configure(columns: [String]) {
-        hStack.arrangedSubviews.forEach {
-            hStack.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
-        
-        for text in columns {
+    private func setupColumns() {
+        for _ in 0..<columnsCount {
             let label = UILabel()
             label.font = .systemFont(ofSize: 15)
             label.textColor = .label
             label.textAlignment = .center
             label.numberOfLines = 0
-            label.text = text.isEmpty ? "—" : text
             
             let container = UIView()
             container.layer.cornerRadius = 10
-            container.backgroundColor = UIColor.secondarySystemBackground
+            container.backgroundColor = .secondarySystemBackground
             
             container.addSubview(label)
             label.pinTop(to: container.topAnchor, 10)
@@ -74,6 +64,25 @@ final class CalendarTableRowCell: UITableViewCell {
             label.pinRight(to: container.trailingAnchor, 8)
             
             hStack.addArrangedSubview(container)
+            labels.append(label)
+        }
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        for label in labels {
+            label.text = nil
+        }
+    }
+    
+    func configure(columns: [String]) {
+        for index in 0..<labels.count {
+            if index < columns.count {
+                let text = columns[index]
+                labels[index].text = text.isEmpty ? "—" : text
+            } else {
+                labels[index].text = "—"
+            }
         }
     }
 }

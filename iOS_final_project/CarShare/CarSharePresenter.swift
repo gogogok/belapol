@@ -12,5 +12,7 @@ final class  CarSharePresenter :  CarSharePresentationLogic  {
         self.view?.displayNotAnimatedView(vc: response.vc)
     }
     
-    
+    func presentRefreshPosts(response: Model.LoadPosts.Response) {
+        self.view?.renderSections(vm: Model.LoadPosts.ViewModel(sections: response.sections))
+    }
 }

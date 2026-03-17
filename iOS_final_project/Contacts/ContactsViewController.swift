@@ -8,13 +8,13 @@ final class ContactsViewController: UIViewController {
     private enum Constants {
         static let fatalError: String = "Ошибка создания"
         
-        static let infoBackgroundColor: UIColor = UIColor(hex: "#E9E8E8")!
+        static let infoBackgroundColor: UIColor = UIColor(hex: "#E9E8E8") ?? .white
         
         static let buttonHeight : CGFloat = 150
         static let buttonHWidth : CGFloat = 170
         static let buttonLeft : CGFloat = -15
         
-        static let backgroundColor: UIColor = UIColor(hex: "#141414")!
+        static let backgroundColor: UIColor = UIColor(hex: "#141414") ?? .black
         
         static let catRight: CGFloat = -100
         static let catTop: CGFloat = -150
@@ -44,7 +44,9 @@ final class ContactsViewController: UIViewController {
         static let contactsBorderCarrierDescriptionLabelWidth: CGFloat = 210
         static let contactsBorderCarrierDescriptionLabelHeight: CGFloat = 1100
         
-
+        static let scrollViewTop: CGFloat = 20
+        
+        static let descriptionBottom: CGFloat = 24
     }
     
     //MARK: - Fields
@@ -181,12 +183,12 @@ final class ContactsViewController: UIViewController {
         
         contactsCarrierDescriptionLabel.pinTop(to: contactsCarrierLabel.bottomAnchor, Constants.contactsBorderDescriptionLabelTop)
         contactsCarrierDescriptionLabel.pinHorizontal(to: contentView, Constants.contactsBorderDescriptionLabelLeft)
-        contactsCarrierDescriptionLabel.pinBottom(to: contentView.bottomAnchor, 24)
+        contactsCarrierDescriptionLabel.pinBottom(to: contentView.bottomAnchor, Constants.descriptionBottom)
     }
     
     private func setupScroll() {
         view.addSubview(scrollView)
-        scrollView.pinTop(to: pawMenu.bottomAnchor, 20)
+        scrollView.pinTop(to: pawMenu.bottomAnchor, Constants.scrollViewTop)
         scrollView.pinBottom(to: view.bottomAnchor)
         scrollView.pinHorizontal(to: view)
 

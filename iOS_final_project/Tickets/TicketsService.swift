@@ -10,12 +10,15 @@ import UIKit
 
 final class TicketsService {
     
-    public func fetchTickets(searchData : SearchResultsResponse) -> [TicketsVM] {
-        return mapToTicketsVM(from: searchData)
+    private var rawIncluded : [[String: Any]] = []
+    
+    public func fetchTickets(
+        searchData: SearchResultsResponse,
+        checkoutURL: String
+    ) -> [TicketsVM] {
+        return mapToTicketsVM(from: searchData, checkoutUrl: checkoutURL)
     }
     
-    
-    // MARK: - Step 2. Load trips
     
     public func loadSearchResults(
         searchId: String,
@@ -53,46 +56,79 @@ final class TicketsService {
             print("Load trips status:", http.statusCode)
         }
         
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let included = json["included"] as? [[String: Any]] {
+            self.rawIncluded = included
+        } else {
+            self.rawIncluded = []
+        }
+        
         return try JSONDecoder().decode(SearchResultsResponse.self, from: data)
     }
     
     
-    private func mapToTicketsVM(from response: SearchResultsResponse) -> [TicketsVM] {
-        response.included
-            .filter { $0.type == "trips" }
-            .compactMap { item in
-                guard let trip = item.attributes else { return nil }
-                
-                let title = trip.carrierName ?? trip.number ?? "-"
-                //                let stationFrom = trip.startCityName ?? "Unknown"
-                //                let stationTo = trip.endCityName ?? "Unknown"
-                
-                let fromStation = trip.startStation?.name ?? "-"
-                let toStation = trip.endStation?.name ?? "-"
-                let point = "\(fromStation) → \(toStation)"
-                
-                let date = formatDate(apiDate: trip.startDate) ?? "-"
-                
-                
-                let startTime = trip.startTime ?? "--:--"
-                let endTime = trip.endTime ?? "--:--"
-                let time = "\(startTime) - \(endTime)"
-                
-                
-                let grade = trip.carrierRating.map { String($0) } ?? "-"
-                
-                return TicketsVM(
+    private func mapToTicketsVM(
+        from response: SearchResultsResponse,
+        checkoutUrl: String
+    ) -> [TicketsVM] {
+        let trips = response.included.filter { $0.type == "trips" }
+
+        var uniqueTrips: [TicketsVM] = []
+        var seenKeys = Set<String>()
+
+        for item in trips {
+
+            guard let trip = item.attributes else { continue }
+
+            guard let carrier = trip.carrierName else { continue }
+            guard let start = trip.startTime else { continue }
+            guard let end = trip.endTime else { continue }
+            guard let from = trip.startStation?.name else { continue }
+            guard let to = trip.endStation?.name else { continue }
+
+
+            let title = carrier
+            let fromCityName = from
+            let toCityName = to
+            guard let fromStation = trip.startStation?.address else { continue }
+            guard let toStation = trip.endStation?.address else { continue }
+            
+            let key = "\(carrier)_\(start)_\(end)_\(from)_\(to)"
+
+            if seenKeys.contains(key) {
+                continue
+            }
+
+            seenKeys.insert(key)
+
+            let borderPoint = lastBYBorderPoint(tripId: item.id)
+            let point = borderPoint.map { "* через \($0)" } ?? " "
+
+            let date = formatDate(apiDate: trip.startDate) ?? "-"
+            let time = "\(start) - \(end)"
+
+            let ticketURL = URL(string: checkoutUrl)
+
+            uniqueTrips.append(
+                TicketsVM(
+                    id: UUID(),
                     title: title,
-                    stationFrom: fromStation,
-                    stationTo: toStation,
+                    stationFrom: fromCityName,
+                    stationTo: toCityName,
                     point: point,
                     date: date,
                     time: time,
-                    image: UIImage(named: "cat_belapol")!,
-                    grade: grade
+                    image: ImageMapping.image(bus: title),
+                    ticketURL: ticketURL?.absoluteString,
+                    fromAddress: fromStation,
+                    toAddress: toStation
                 )
-            }
+            )
+        }
+
+        return uniqueTrips
     }
+    
     
     func formatDate(apiDate: String?) -> String? {
         
@@ -121,5 +157,51 @@ final class TicketsService {
         outputFormatter.locale = Locale(identifier: "ru_RU")
         
         return outputFormatter.string(from: date)
+    }
+    
+    private func lastBYBorderPoint(tripId: String?) -> String? {
+        guard let tripId else { return nil }
+        
+        guard let tripObject = rawIncluded.first(where: {
+            ($0["id"] as? String) == tripId && ($0["type"] as? String) == "trips"
+        }) else {
+            return nil
+        }
+        
+        guard
+            let relationships = tripObject["relationships"] as? [String: Any],
+            let points = relationships["points"] as? [String: Any],
+            let data = points["data"] as? [[String: Any]]
+        else {
+            return nil
+        }
+        
+        let pointIds: [String] = data.compactMap { $0["id"] as? String }
+        
+        let tripPoints: [[String: Any]] = pointIds.compactMap { pointId in
+            rawIncluded.first(where: {
+                ($0["id"] as? String) == pointId && ($0["type"] as? String) == "trip-points"
+            })
+        }
+        
+        func pointText(_ point: [String: Any]) -> String {
+            let attributes = point["attributes"] as? [String: Any]
+            
+            let title = attributes?["title"] as? String ?? ""
+            let description = attributes?["description"] as? String ?? ""
+            let address = attributes?["address"] as? String ?? ""
+            
+            return "\(title) \(description) \(address)".lowercased()
+        }
+        
+        if tripPoints.last(where: { pointText($0).contains("берестовиц") }) != nil {
+            return "Берестовицу"
+        }
+        
+        if tripPoints.last(where: { pointText($0).contains("брест") }) != nil {
+            return "Брест"
+        }
+        
+        return "Литву"
     }
 }

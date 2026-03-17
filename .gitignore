@@ -1,0 +1,46 @@
+border_posts_load.py
+load_channel.py
+# telegram sessions
+*.session
+*.session-journal
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# --- виртуальные окружения ---
+venv/
+.env/
+.venv/
+
+# --- environment variables ---
+.env
+.env.local
+
+# --- логи ---
+*.log
+
+# --- macOS ---
+.DS_Store
+
+# --- Xcode / iOS ---
+DerivedData/
+*.xcworkspace
+*.xcuserdata
+*.xcuserstate
+
+# --- build ---
+build/
+dist/
+
+# --- IDE ---
+.idea/
+.vscode/
+
+# --- misc ---
+*.tmp
+*.swp

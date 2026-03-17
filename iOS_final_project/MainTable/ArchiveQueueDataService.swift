@@ -159,7 +159,10 @@ final class ArchiveQueueDataService: NSObject {
         let js = """
         (function() {
             function normalize(s) {
-                return (s || "").replace(/\\s+/g, " ").trim();
+                return (s || "")
+                    .replace(/[\\u00A0\\u202F]/g, ' ')
+                    .replace(/\\s+/g, " ")
+                    .trim();
             }
 
             const pageTitle = normalize(
@@ -168,7 +171,6 @@ final class ArchiveQueueDataService: NSObject {
 
             const bodyText = normalize(document.body.innerText || '');
 
-            // Ищем блок после "Очереди в пункте пропуска ..."
             const startMatch = bodyText.match(/Очереди в пункте пропуска\\s+(.+?)\\s+на\\s+(\\d{2}\\.\\d{2}\\.\\d{4})/i);
             if (!startMatch) {
                 return null;
@@ -184,12 +186,10 @@ final class ArchiveQueueDataService: NSObject {
 
             let relevantText = bodyText.slice(startIndex);
 
-            // Обрезаем хвост страницы после нужного блока
             const endMarkers = [
                 'Информация о пунктах пропуска',
                 'Интерактивная карта',
                 'Графики очередей',
-                'Архив очередей',
                 'Расстояние до ближайшего пункта пропуска'
             ];
 
@@ -203,42 +203,56 @@ final class ArchiveQueueDataService: NSObject {
 
             relevantText = normalize(relevantText.slice(0, endIndex));
 
-            // Проверяем, что внутри есть заголовки и строки времени
-            const hasHeaders =
-                /Выезд грузовые/i.test(relevantText) &&
-                /Выезд легковые/i.test(relevantText) &&
-                /Выезд автобусы/i.test(relevantText);
-
-            const hasTimeRows = /\\d{2}:\\d{2}\\s+\\d+\\s+\\d+\\s+\\d+/i.test(relevantText);
-
-            if (!hasHeaders || !hasTimeRows) {
-                return {
-                    title: pageTitle + ' — ' + checkpointName + ' — ' + dateText,
-                    rows: []
-                };
-            }
-
             const rows = [];
             rows.push({
                 columns: ['Время', 'Грузовые', 'Легковые', 'Автобусы']
             });
 
-            const rowRegex = /(\\d{2}:\\d{2})\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)/g;
-            let match;
+            // Удаляем служебные заголовки, чтобы они не мешали токенизации
+            let cleanText = relevantText
+                .replace(/Очереди в пункте пропуска.+?на\\s+\\d{2}\\.\\d{2}\\.\\d{4}/i, ' ')
+                .replace(/Выезд грузовые/gi, ' ')
+                .replace(/Выезд легковые/gi, ' ')
+                .replace(/Выезд автобусы/gi, ' ')
+                .replace(/\\d{2}\\.\\d{2}\\.\\d{4}/g, ' ');
 
-            while ((match = rowRegex.exec(relevantText)) !== null) {
-                rows.push({
-                    columns: [
-                        match[1],
-                        match[2],
-                        match[3],
-                        match[4]
-                    ]
-                });
+            cleanText = normalize(cleanText);
+
+            const tokens = cleanText.split(' ').filter(Boolean);
+
+            function isTimeToken(s) {
+                return /^\\d{2}:\\d{2}$/.test(s);
+            }
+
+            function isValueToken(s) {
+                return /^\\d+$/.test(s) || s === '-' || s === '—';
+            }
+
+            for (let i = 0; i < tokens.length; i++) {
+                if (!isTimeToken(tokens[i])) continue;
+
+                const time = tokens[i];
+                const values = [];
+
+                let j = i + 1;
+                while (j < tokens.length && values.length < 3) {
+                    if (isValueToken(tokens[j])) {
+                        values.push(tokens[j] === '—' ? '-' : tokens[j]);
+                    }
+                    j++;
+                }
+
+                if (values.length === 3) {
+                    rows.push({
+                        columns: [time, values[0], values[1], values[2]]
+                    });
+                    i = j - 1;
+                }
             }
 
             return {
                 title: pageTitle + ' — ' + checkpointName + ' — ' + dateText,
+                relevantText: relevantText,
                 rows: rows
             };
         })();
@@ -262,6 +276,10 @@ final class ArchiveQueueDataService: NSObject {
             else {
                 self.finishIfNeeded(.failure(Model.ArchiveQueueScreenshotError.resultNotFound))
                 return
+            }
+            
+            if let relevantText = dict["relevantText"] as? String {
+                print("relevantText =", relevantText)
             }
             
             let rows: [Model.ArchiveQueueRow] = rawRows.compactMap { item in
@@ -521,13 +539,13 @@ final class ArchiveQueueDataService: NSObject {
 }
 
 extension ArchiveQueueDataService: WKNavigationDelegate {
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation) {
         pageDidLoad()
     }
     
     func webView(
         _ webView: WKWebView,
-        didFail navigation: WKNavigation!,
+        didFail navigation: WKNavigation,
         withError error: Error
     ) {
         finishIfNeeded(.failure(error))
@@ -535,7 +553,7 @@ extension ArchiveQueueDataService: WKNavigationDelegate {
     
     func webView(
         _ webView: WKWebView,
-        didFailProvisionalNavigation navigation: WKNavigation!,
+        didFailProvisionalNavigation navigation: WKNavigation,
         withError error: Error
     ) {
         finishIfNeeded(.failure(error))

@@ -20,7 +20,7 @@ final class NewsCardCell: UICollectionViewCell {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(title: String, date: String, subtitle: String, image: UIImage) {
+    func configure(title: String, date: String, subtitle: String, image: UIImage?) {
         card.configure(title: title, dateText: date, subtitle: subtitle, image: image)
     }
 }

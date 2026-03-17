@@ -13,9 +13,42 @@ final class CarShareView: UIView {
 
     //MARK: - Constants
     private enum Constants {
+        static let fontName: String = "InriaSans-Bold"
         static let fontSize: CGFloat = 17
         static let descriptionFontSize: CGFloat = 13
-        static let fontName: String = "InriaSans-Bold"
+        static let buttonFontSize: CGFloat = 14
+
+        static let textColor: UIColor = .white
+        static let borderColor: CGColor = UIColor.white.cgColor
+
+        static let backgroundImageName: String = "car_share_background"
+        static let backgroundAlpha: CGFloat = 0.4
+
+        static let cornerRadius: CGFloat = 15
+        static let borderWidth: CGFloat = 2
+
+        static let dateTopInset: CGFloat = 10
+        static let leadingInset: CGFloat = 10
+
+        static let timeTopInset: CGFloat = 3
+        static let descriptionTopInset: CGFloat = 20
+
+        static let dateWidth: CGFloat = 150
+        static let timeWidth: CGFloat = 100
+        static let descriptionWidth: CGFloat = 230
+
+        static let buttonRightInset: CGFloat = 20
+        static let buttonBottomInset: CGFloat = 20
+        static let buttonWidth: CGFloat = 100
+        static let buttonHeight: CGFloat = 30
+        static let buttonTitle: String = "Подробнее"
+
+        static let viewHeight: CGFloat = 125
+
+        static let dateNumberOfLines: Int = 3
+        static let timeNumberOfLines: Int = 3
+        static let descriptionNumberOfLines: Int = 2
+        static let descriptionLineSpacing: CGFloat = 6
     }
     
     // MARK: - UI
@@ -23,63 +56,61 @@ final class CarShareView: UIView {
         let imView = UIImageView()
         imView.contentMode = .scaleAspectFill
         imView.clipsToBounds = true
-        imView.alpha = 0.4
-        imView.layer.borderColor = UIColor.white.cgColor
-        imView.layer.cornerRadius = 15
-        imView.layer.borderWidth = 2
-        imView.image = UIImage(named: "car_share_background")
+        imView.alpha = Constants.backgroundAlpha
+        imView.layer.borderColor = Constants.borderColor
+        imView.layer.cornerRadius = Constants.cornerRadius
+        imView.layer.borderWidth = Constants.borderWidth
+        imView.image = UIImage(named: Constants.backgroundImageName)
         return imView
     }()
 
-    
     private let dateLabel: UILabel = {
         let date = UILabel()
         date.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
-        date.textColor = .white
-        date.numberOfLines = 3
-        date.setWidth(150)
+        date.textColor = Constants.textColor
+        date.numberOfLines = Constants.dateNumberOfLines
+        date.setWidth(Constants.dateWidth)
         return date
     }()
     
     private let timeLabel: UILabel = {
-        let date = UILabel()
-        date.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
-        date.textColor = .white
-        date.numberOfLines = 3
-        date.setWidth(100)
-        return date
+        let time = UILabel()
+        time.font = UIFont(name: Constants.fontName, size: Constants.fontSize)
+        time.textColor = Constants.textColor
+        time.numberOfLines = Constants.timeNumberOfLines
+        time.setWidth(Constants.timeWidth)
+        return time
     }()
     
     private let descriptionLabel: UILabel = {
         let description = UILabel()
         description.font = UIFont(name: Constants.fontName, size: Constants.descriptionFontSize)
-        description.textColor = .white
-        description.numberOfLines = 2
-        
-        description.setWidth(230)
-        
+        description.textColor = Constants.textColor
+        description.numberOfLines = Constants.descriptionNumberOfLines
+        description.setWidth(Constants.descriptionWidth)
         return description
     }()
     
-    private let showMoreButton : BasicButtonView = BasicButtonView(label: "Подробнее", width: 100, height: 30)
+    private let showMoreButton: BasicButtonView = BasicButtonView(
+        label: Constants.buttonTitle,
+        width: Constants.buttonWidth,
+        height: Constants.buttonHeight
+    )
 
-    // MARK: - Lyfecycle
+    // MARK: - Lifecycle
     override init(frame: CGRect) {
         super.init(frame: frame)
         configureUI()
     }
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         configureUI()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-    }
-
     // MARK: - Configure
     private func configureUI() {
-        layer.cornerRadius = 15
+        layer.cornerRadius = Constants.cornerRadius
         clipsToBounds = true
 
         addSubview(bgImageView)
@@ -89,27 +120,26 @@ final class CarShareView: UIView {
         addSubview(showMoreButton)
 
         bgImageView.pin(to: self)
-        
-        
-        dateLabel.pinTop(to: topAnchor, 10)
-        dateLabel.pinLeft(to: leadingAnchor, 10)
-        
-        timeLabel.pinTop(to: dateLabel.bottomAnchor, 3)
-        timeLabel.pinLeft(to: leadingAnchor, 10)
-        
-        descriptionLabel.pinTop(to: timeLabel.bottomAnchor, 20)
-        descriptionLabel.pinLeft(to: leadingAnchor, 10)
-        
-        showMoreButton.pinRight(to: trailingAnchor, 20)
-        showMoreButton.pinBottom(to: bottomAnchor, 20)
-        showMoreButton.layer.cornerRadius = 15
-        showMoreButton.titleLabel?.font = UIFont(name: Constants.fontName, size: 14)
+
+        dateLabel.pinTop(to: topAnchor, Constants.dateTopInset)
+        dateLabel.pinLeft(to: leadingAnchor, Constants.leadingInset)
+
+        timeLabel.pinTop(to: dateLabel.bottomAnchor, Constants.timeTopInset)
+        timeLabel.pinLeft(to: leadingAnchor, Constants.leadingInset)
+
+        descriptionLabel.pinTop(to: timeLabel.bottomAnchor, Constants.descriptionTopInset)
+        descriptionLabel.pinLeft(to: leadingAnchor, Constants.leadingInset)
+
+        showMoreButton.pinRight(to: trailingAnchor, Constants.buttonRightInset)
+        showMoreButton.pinBottom(to: bottomAnchor, Constants.buttonBottomInset)
+        showMoreButton.layer.cornerRadius = Constants.cornerRadius
+        showMoreButton.titleLabel?.font = UIFont(name: Constants.fontName, size: Constants.buttonFontSize)
         showMoreButton.addTarget(self, action: #selector(showMoreTapped), for: .touchUpInside)
-        
-        setHeight(125)
+
+        setHeight(Constants.viewHeight)
     }
 
-    func configure (date: String, time: String, description: String, userName: String, nickname: String) {
+    func configure(date: String, time: String, description: String, userName: String, nickname: String) {
         dateLabel.text = date
         timeLabel.text = time
         descriptionLabel.text = description
@@ -117,17 +147,16 @@ final class CarShareView: UIView {
     }
     
     private func makeSectionTitle(label: UILabel) {
-        
         let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = 6
-        
+        paragraph.lineSpacing = Constants.descriptionLineSpacing
+
         let attributed = NSAttributedString(
-            string: label.text!,
+            string: label.text ?? "",
             attributes: [
                 .paragraphStyle: paragraph
             ]
         )
-        
+
         label.attributedText = attributed
     }
     
@@ -135,6 +164,4 @@ final class CarShareView: UIView {
     private func showMoreTapped() {
         onTapShowMore?()
     }
-    
 }
-
